@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Family Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --r:#ff8b6b; --r-l:#fff0ec; --r-m:#ffd4c9;
+  --a:#a78bfa; --a-l:#f3efff; --a-m:#ddd6fe;
+  --k:#34d399; --k-l:#ecfdf5; --k-m:#a7f3d0;
+  --bg:#fdf8f4; --srf:#ffffff;
+  --ink:#3d2b1f; --ink2:#7c6355; --ink3:#b8a49c;
+  --bdr:rgba(61,43,31,0.08);
+  --shd:0 4px 24px rgba(61,43,31,0.08);
+  --shd-sm:0 2px 10px rgba(61,43,31,0.05);
+  --fn:'Nunito',sans-serif;
+  --sb-w:420px;
+}
+body{background:var(--bg);font-family:var(--fn);color:var(--ink);min-height:100vh;}
+
+/* ── TOPBAR — fully transparent so hero gradient flows through ── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:transparent;
+  border-bottom:none;
+  height:52px;display:flex;align-items:center;padding:0 28px;gap:20px;
+}
+.tb-title{font-size:16px;font-weight:900;color:var(--ink);white-space:nowrap;}
+.tb-title span{color:var(--r);}
+.pill-filter{display:flex;gap:6px;flex-wrap:wrap;}
+.pill-filter button{
+  padding:7px 18px;border-radius:100px;border:2px solid rgba(255,255,255,0.6);
+  font-family:var(--fn);font-size:12px;font-weight:800;cursor:pointer;
+  background:rgba(255,255,255,0.45);color:var(--ink2);transition:all .15s;white-space:nowrap;
+  backdrop-filter:blur(4px);
+}
+.pill-filter button:hover{background:rgba(255,255,255,0.7);color:var(--ink);}
+.pf-fam.on,.pf-r.on{background:var(--r);color:#fff;border-color:var(--r);}
+.pf-a.on{background:var(--a);color:#fff;border-color:var(--a);}
+.pf-k.on{background:var(--k);color:#1a1410;border-color:var(--k);}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.rate-wrap{display:flex;align-items:center;gap:6px;}
+.rate-label{font-size:11px;font-weight:800;color:var(--ink2);}
+.info-btn{
+  width:18px;height:18px;border-radius:50%;background:var(--ink2);color:#fff;
+  font-size:10px;font-weight:900;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;position:relative;border:none;flex-shrink:0;
+}
+.tooltip-box{
+  position:absolute;top:calc(100% + 8px);right:0;
+  background:var(--ink);color:#fff;font-size:11px;font-weight:700;
+  padding:8px 12px;border-radius:10px;white-space:nowrap;
+  display:none;z-index:999;line-height:1.7;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);
+}
+.info-btn:hover .tooltip-box{display:block;}
+.rate-input{
+  width:64px;padding:5px 9px;border:2px solid rgba(255,255,255,0.7);border-radius:10px;
+  font-family:var(--fn);font-size:15px;font-weight:900;color:var(--ink);
+  background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);
+}
+.rate-input:focus{outline:none;border-color:var(--r);background:rgba(255,255,255,0.9);}
+
+/* ── LAYOUT SHELL ── */
+#app{padding-top:0;display:flex;min-height:100vh;position:relative;}
+#main-col{flex:1;min-width:0;transition:padding-right .25s;}
+body.sb-open #main-col{padding-right:var(--sb-w);}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sb-w);background:#fff;border-left:1px solid var(--bdr);
+  position:fixed;top:52px;right:0;bottom:0;overflow-y:auto;
+  transform:translateX(100%);transition:transform .25s ease;z-index:100;
+}
+#sidebar.open{transform:translateX(0);}
+
+/* Sidebar collapse tab — on the LEFT edge of sidebar */
+#sb-tab{
+  position:fixed;top:50%;right:var(--sb-w);transform:translateY(-50%) translateX(100%);
+  z-index:101;width:22px;background:#fff;border:1px solid var(--bdr);
+  border-right:none;border-radius:8px 0 0 8px;cursor:pointer;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px;gap:3px;box-shadow:-2px 0 8px rgba(61,43,31,0.06);
+  transition:right .25s ease;
+}
+#sb-tab.visible{display:flex;}
+#sb-tab.retracted{right:0;transform:translateY(-50%) translateX(0);}
+.sb-tab-pip{width:3px;height:3px;border-radius:50%;background:var(--ink3);}
+.sb-tab-arrow{font-size:9px;color:var(--ink3);line-height:1;}
+
+/* ── CARDS / SURFACES ── */
+.card{background:var(--srf);border-radius:20px;padding:24px;box-shadow:var(--shd);}
+.card-sm{background:var(--srf);border-radius:14px;padding:16px;box-shadow:var(--shd-sm);}
+.sl{font-size:10px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;}
+.sv{font-size:26px;font-weight:900;color:var(--ink);margin-top:5px;letter-spacing:-.5px;}
+.ss{font-size:11px;color:var(--ink3);margin-top:3px;font-weight:600;}
+.sec-title{font-size:13px;font-weight:900;color:var(--ink);margin-bottom:14px;}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;}
+.av-r{background:var(--r);color:#fff;}
+.av-a{background:var(--a);color:#fff;}
+.av-k{background:var(--k);color:#1a1410;}
+.chart-wrap{position:relative;width:100%;}
+.bar-track{background:rgba(61,43,31,0.06);border-radius:100px;height:7px;overflow:hidden;margin-top:5px;}
+.bar-fill{height:100%;border-radius:100px;transition:width .5s ease;}
+
+/* ── FAMILY VIEW ── */
+#family-view{display:block;}
+
+/* Hero — seamless gradient, bleeds behind transparent topbar */
+.fv-hero{
+  background:linear-gradient(160deg,#ffe8d6 0%,#ffd6cc 45%,#ede8ff 100%);
+  padding:84px 28px 28px;border-radius:0 0 32px 32px;
+}
+.fv-hero-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.fv-hero-left .eyebrow{font-size:11px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.fv-hero-left .big-num{font-size:60px;font-weight:900;color:var(--ink);letter-spacing:-3px;line-height:1;}
+.fv-hero-left .sub{font-size:13px;color:var(--ink2);font-weight:600;margin-top:6px;}
+.fv-hero-right{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;padding-top:4px;}
+.fv-stat-box{background:rgba(255,255,255,0.7);border-radius:16px;padding:14px 18px;backdrop-filter:blur(4px);}
+.fv-stat-box .sl{margin-bottom:4px;}
+.fv-stat-box .num{font-size:22px;font-weight:900;color:var(--ink);letter-spacing:-.5px;}
+
+/* Persona grid */
+.persona-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+  padding:20px 28px 0;
+}
+.persona-card{
+  border-radius:20px;padding:24px;box-shadow:var(--shd);background:var(--srf);
+  display:flex;flex-direction:column;min-height:380px;
+}
+.persona-card.pc-r{border-top:4px solid var(--r);}
+.persona-card.pc-a{border-top:4px solid var(--a);}
+.persona-card.pc-k{border-top:4px solid var(--k);}
+.pc-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.pc-name{font-size:16px;font-weight:900;}
+.pc-sub{font-size:10px;color:var(--ink3);font-weight:700;}
+
+/* Big estimated value */
+.pc-curr-val{font-size:40px;font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:4px;}
+.pc-curr-sub{font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:14px;}
+
+/* Metric tiles — wide 2-col grid like screenshot */
+.pc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+.pc-metric{border-radius:14px;padding:13px 12px 11px;}
+.pc-metric .ml{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+.pc-metric .mv{font-size:18px;font-weight:900;margin-top:5px;}
+/* colours per persona — all chips same colour within each card */
+.pm-r{background:var(--r-l);}  .pm-r .ml{color:var(--r);}  .pm-r .mv{color:var(--ink);}
+.pm-a{background:var(--a-l);}  .pm-a .ml{color:var(--a);}  .pm-a .mv{color:var(--ink);}
+.pm-k{background:var(--k-l);}  .pm-k .ml{color:var(--k);}  .pm-k .mv{color:var(--ink);}
+
+.pc-chart-wrap{position:relative;flex:1;min-height:150px;}
+
+/* Combined projection */
+.fv-proj{padding:16px 28px 0;}
+
+/* Bottom tiles */
+.fv-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 28px 32px;}
+
+/* ── PERSONA VIEW (L09 minimal scroll) ── */
+#persona-view{display:none;}
+.pv-inner{
+  /* sidebar takes right space; top padding accounts for transparent fixed topbar */
+  max-width:600px;margin:0 auto;padding:72px 20px 60px;
+}
+.pv-hero-num{font-size:64px;font-weight:900;color:var(--ink);letter-spacing:-3px;line-height:1;}
+.pv-hero-sub{font-size:14px;color:var(--ink2);margin-top:8px;font-weight:600;}
+.pv-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:28px 0;}
+.pv-stat{border-top:3px solid var(--bdr);padding-top:12px;}
+.pv-chart-section{margin-bottom:32px;}
+.pv-row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bdr);}
+.pv-row-label{font-size:14px;color:var(--ink2);font-weight:700;}
+.pv-row-val{font-size:14px;font-weight:900;}
+
+/* ── SIDEBAR PANELS ── */
+.sb-panel{border-bottom:1px solid var(--bdr);padding:18px 20px;}
+.sb-panel-title{font-size:12px;font-weight:900;color:var(--ink);margin-bottom:14px;}
+.goal-input{
+  width:100%;padding:9px 12px;border:2px solid var(--bdr);border-radius:12px;
+  font-family:var(--fn);font-size:18px;font-weight:900;color:var(--ink);background:var(--bg);
+  letter-spacing:0.5px;
+}
+.goal-input:focus{outline:none;border-color:var(--r);}
+.goal-result-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bdr);}
+.goal-result-row:last-child{border-bottom:none;}
+.goal-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;}
+.filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.mini-select{
+  padding:5px 8px;border:1.5px solid var(--bdr);border-radius:8px;
+  font-family:var(--fn);font-size:11px;font-weight:800;color:var(--ink2);
+  background:var(--bg);cursor:pointer;
+}
+.mini-select:focus{outline:none;border-color:var(--r);}
+.wf-toggle{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;}
+.wf-btn{
+  padding:5px 9px;border-radius:8px;border:1.5px solid var(--bdr);
+  font-family:var(--fn);font-size:10px;font-weight:800;cursor:pointer;
+  background:var(--bg);color:var(--ink3);transition:all .15s;
+}
+.wf-btn.on{background:var(--r);color:#fff;border-color:var(--r);}
+.wf-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.wf-label{font-size:10px;font-weight:800;color:var(--ink2);width:68px;flex-shrink:0;text-align:right;}
+.wf-bar-outer{flex:1;background:rgba(61,43,31,0.06);border-radius:6px;height:20px;overflow:hidden;position:relative;}
+.wf-bar-inner{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:6px;font-size:9px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;transition:width .4s ease;}
+.wf-val{font-size:10px;font-weight:900;color:var(--ink2);white-space:nowrap;min-width:40px;text-align:right;}
+
+/* value-by-persona */
+.vbp-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.vbp-name{font-size:12px;font-weight:800;width:56px;}
+.vbp-bars{flex:1;}
+.vbp-bubble-row{display:flex;gap:6px;margin-top:5px;}
+.vbp-bubble{font-size:10px;font-weight:800;padding:3px 9px;border-radius:100px;}
+
+/* data table */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{text-align:left;padding:8px 10px;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--bdr);}
+.data-table td{padding:10px 10px;border-bottom:1px solid rgba(61,43,31,.04);}
+.data-table .amt{font-weight:900;color:var(--r);}
+.empty-state{text-align:center;padding:20px;color:var(--ink3);font-size:12px;font-weight:700;}
+
+@media(max-width:860px){
+  .persona-grid{grid-template-columns:1fr;}
+  .fv-bottom{grid-template-columns:1fr;}
+  .pv-stats{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ══ -->
+<div id="topbar">
+  <div class="tb-title">Family <span>Portfolio</span></div>
+  <div class="pill-filter" id="main-filter">
+    <button class="pf-fam on" data-p="fam">👨‍👩‍👦 Family</button>
+    <button class="pf-r" data-p="ranjith">Ranjith</button>
+    <button class="pf-a" data-p="aranei">Aranei</button>
+    <button class="pf-k" data-p="kavin">Kavin</button>
+  </div>
+  <div class="tb-right">
+    <div class="rate-wrap">
+      <span class="rate-label">Rate</span>
+      <div class="info-btn" tabindex="0">i
+        <div class="tooltip-box">6% — Conservative<br>8% — Moderate<br>10% — Aggressive</div>
+      </div>
+      <input class="rate-input" type="number" id="global-rate" value="8" min="1" max="20" step="0.5">
+      <span class="rate-label">%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar collapse tab (persona view only) -->
+<div id="sb-tab" onclick="toggleSidebar()">
+  <div class="sb-tab-arrow" id="sb-tab-arrow">◀</div>
+  <div class="sb-tab-pip"></div>
+  <div class="sb-tab-pip"></div>
+  <div class="sb-tab-pip"></div>
+</div>
+
+<div id="app">
+  <div id="main-col">
+
+    <!-- ══════════════════════════
+         FAMILY VIEW
+    ══════════════════════════ -->
+    <div id="family-view">
+
+      <!-- Hero — seamless gradient, no band -->
+      <div class="fv-hero">
+        <div class="fv-hero-top">
+          <div class="fv-hero-left">
+            <div class="eyebrow">· Started June 2026</div>
+            <div class="big-num" id="fv-hero">$0</div>
+            <div class="sub">Estimated current value</div>
+          </div>
+          <div class="fv-hero-right">
+            <div class="fv-stat-box">
+              <div class="sl">30-Year est.</div>
+              <div class="num" id="fv-proj30">$0</div>
+              <div class="ss" id="fv-rate-label">at 8% p.a.</div>
+            </div>
+            <div class="fv-stat-box">
+              <div class="sl">Total contributed</div>
+              <div class="num" id="fv-total">$0</div>
+              <div class="ss">Since Jun 2026</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Persona cards -->
+      <div class="persona-grid">
+
+        <!-- Ranjith -->
+        <div class="persona-card pc-r">
+          <div class="pc-header">
+            <div class="avatar av-r">R</div>
+            <div><div class="pc-name">Ranjith</div><div class="pc-sub">$2,000/mo · Birthday 8 Nov</div></div>
+          </div>
+          <div class="pc-curr-val" style="color:var(--r);" id="pc-r-curr">$0</div>
+          <div class="pc-curr-sub">Estimated today</div>
+          <div class="pc-metrics">
+            <div class="pc-metric pm-r"><div class="ml">Starting</div><div class="mv" id="pc-r-start">$0</div></div>
+            <div class="pc-metric pm-r"><div class="ml">Contributed</div><div class="mv" id="pc-r-contrib">$0</div></div>
+            <div class="pc-metric pm-r"><div class="ml">30-Year</div><div class="mv" id="pc-r-proj">$0</div></div>
+          </div>
+          <div class="pc-chart-wrap"><canvas id="pc-r-chart" role="img" aria-label="Ranjith projection">Ranjith projection</canvas></div>
+        </div>
+
+        <!-- Aranei -->
+        <div class="persona-card pc-a">
+          <div class="pc-header">
+            <div class="avatar av-a">A</div>
+            <div><div class="pc-name">Aranei</div><div class="pc-sub">$1,000/mo · Birthday 20 Jan</div></div>
+          </div>
+          <div class="pc-curr-val" style="color:var(--a);" id="pc-a-curr">$0</div>
+          <div class="pc-curr-sub">Estimated today</div>
+          <div class="pc-metrics">
+            <div class="pc-metric pm-a"><div class="ml">Starting</div><div class="mv" id="pc-a-start">$0</div></div>
+            <div class="pc-metric pm-a"><div class="ml">Contributed</div><div class="mv" id="pc-a-contrib">$0</div></div>
+            <div class="pc-metric pm-a"><div class="ml">30-Year</div><div class="mv" id="pc-a-proj">$0</div></div>
+          </div>
+          <div class="pc-chart-wrap"><canvas id="pc-a-chart" role="img" aria-label="Aranei projection">Aranei projection</canvas></div>
+        </div>
+
+        <!-- Kavin -->
+        <div class="persona-card pc-k">
+          <div class="pc-header">
+            <div class="avatar av-k">K</div>
+            <div><div class="pc-name">Kavin</div><div class="pc-sub">$500/mo · Birthday 18 May</div></div>
+          </div>
+          <div class="pc-curr-val" style="color:var(--k);" id="pc-k-curr">$0</div>
+          <div class="pc-curr-sub">Estimated today</div>
+          <div class="pc-metrics">
+            <div class="pc-metric pm-k"><div class="ml">Starting</div><div class="mv" id="pc-k-start">$0</div></div>
+            <div class="pc-metric pm-k"><div class="ml">Contributed</div><div class="mv" id="pc-k-contrib">$0</div></div>
+            <div class="pc-metric pm-k"><div class="ml">30-Year</div><div class="mv" id="pc-k-proj">$0</div></div>
+          </div>
+          <div class="pc-chart-wrap"><canvas id="pc-k-chart" role="img" aria-label="Kavin projection">Kavin projection</canvas></div>
+        </div>
+
+      </div>
+
+      <!-- Combined 30-yr projection -->
+      <div class="fv-proj">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div class="sec-title" style="margin-bottom:0;">📈 Combined 30-Year Projection</div>
+            <div style="display:flex;gap:18px;font-size:11px;font-weight:800;" id="fv-legend">
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:16px;height:3px;background:#ffc2b4;display:inline-block;border-radius:2px;"></span>6% Conservative</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:16px;height:3px;background:var(--r);display:inline-block;border-radius:2px;"></span><span id="fv-base-legend">8% Input Rate</span></span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:16px;height:3px;background:var(--a);display:inline-block;border-radius:2px;"></span>10% Aggressive</span>
+            </div>
+          </div>
+          <div class="chart-wrap" style="height:300px;"><canvas id="fv-proj-chart" role="img" aria-label="Family 30-year projection">Family projection</canvas></div>
+        </div>
+      </div>
+
+      <!-- Bottom tiles -->
+      <div class="fv-bottom">
+        <!-- Value by Persona -->
+        <div class="card">
+          <div class="sec-title">👥 Value by Persona</div>
+          <div id="vbp-rows"></div>
+        </div>
+        <!-- What's Going In -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+            <div class="sec-title" style="margin-bottom:0;">🥧 What's Going In?</div>
+            <div class="filter-row" style="margin-bottom:0;">
+              <select class="mini-select" id="fv-wgi-year" onchange="updateFvWgi()">
+                <option value="all">All time</option>
+              </select>
+              <select class="mini-select" id="fv-wgi-month" onchange="updateFvWgi()">
+                <option value="all">All months</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div style="width:180px;height:180px;flex-shrink:0;position:relative;"><canvas id="fv-wgi-chart" role="img" aria-label="What's going in">Contribution breakdown</canvas></div>
+            <div style="flex:1;" id="fv-wgi-legend"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /family-view -->
+
+    <!-- ══════════════════════════
+         PERSONA VIEW
+    ══════════════════════════ -->
+    <div id="persona-view">
+      <div class="pv-inner">
+
+        <!-- Hero -->
+        <div style="margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="avatar" id="pv-avatar">R</div>
+            <div style="font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;" id="pv-name-label">Ranjith</div>
+          </div>
+          <div class="pv-hero-num" id="pv-hero">$0</div>
+          <div class="pv-hero-sub">Estimated current value</div>
+        </div>
+
+        <!-- 4 stat blocks -->
+        <div class="pv-stats">
+          <div class="pv-stat" id="pv-stat-1">
+            <div class="sl">30-Year Projection</div>
+            <div style="font-size:28px;font-weight:900;margin-top:6px;" id="pv-proj30">$0</div>
+            <div class="ss" id="pv-rate-sub">Input Rate 8% p.a.</div>
+          </div>
+          <div class="pv-stat" id="pv-stat-2">
+            <div class="sl">Total Contributed</div>
+            <div style="font-size:28px;font-weight:900;margin-top:6px;" id="pv-total">$0</div>
+            <div class="ss">Since Jun 2026</div>
+          </div>
+          <div class="pv-stat" id="pv-stat-3">
+            <div class="sl">Conservative (6%)</div>
+            <div style="font-size:28px;font-weight:900;margin-top:6px;" id="pv-proj-lo">$0</div>
+            <div class="ss">Pessimistic scenario</div>
+          </div>
+          <div class="pv-stat" id="pv-stat-4">
+            <div class="sl">Aggressive (10%)</div>
+            <div style="font-size:28px;font-weight:900;margin-top:6px;" id="pv-proj-hi">$0</div>
+            <div class="ss">Optimistic scenario</div>
+          </div>
+        </div>
+
+        <!-- Projection chart -->
+        <div class="pv-chart-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div style="font-size:15px;font-weight:900;">30-Year Growth Projection</div>
+            <div style="display:flex;gap:14px;font-size:11px;font-weight:800;">
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:3px;background:#ffc2b4;display:inline-block;border-radius:2px;"></span>6%</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span id="pv-legend-swatch" style="width:14px;height:3px;background:var(--r);display:inline-block;border-radius:2px;"></span><span id="pv-base-legend">8% Input Rate</span></span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:3px;background:var(--a);display:inline-block;border-radius:2px;"></span>10%</span>
+            </div>
+          </div>
+          <div class="chart-wrap" style="height:280px;"><canvas id="pv-proj-chart" role="img" aria-label="Persona 30-year projection">Projection data</canvas></div>
+        </div>
+
+        <!-- Breakdown -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:15px;font-weight:900;margin-bottom:14px;">Contribution Breakdown</div>
+          <div class="pv-row"><span class="pv-row-label">Starting balance</span><span class="pv-row-val" id="pv-bd-start">$0</span></div>
+          <div class="pv-row"><span class="pv-row-label">Monthly contributions to date</span><span class="pv-row-val" id="pv-bd-monthly">$0</span></div>
+          <div class="pv-row"><span class="pv-row-label">Birthday gifts to date</span><span class="pv-row-val" id="pv-bd-bday">$0</span></div>
+          <div class="pv-row"><span class="pv-row-label">One-off contributions</span><span class="pv-row-val" id="pv-bd-oneoff">$0</span></div>
+          <div class="pv-row" style="border-bottom:none;">
+            <span style="font-size:15px;font-weight:900;">Total</span>
+            <span style="font-size:18px;font-weight:900;" id="pv-bd-total">$0</span>
+          </div>
+        </div>
+
+        <!-- One-off table -->
+        <div>
+          <div style="font-size:15px;font-weight:900;margin-bottom:12px;">One-Off Contributions</div>
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Description</th><th>From</th><th>Amount</th></tr></thead>
+            <tbody id="pv-tbl"><tr><td colspan="4" class="empty-state">Connect your Google Sheet to load contributions</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /persona-view -->
+
+  </div><!-- /main-col -->
+
+  <!-- ══════════════════════════
+       SIDEBAR
+  ══════════════════════════ -->
+  <div id="sidebar">
+    <!-- Goal Calculator -->
+    <div class="sb-panel">
+      <div class="sb-panel-title">🎯 Goal Calculator</div>
+      <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:10px;">How long to reach your target?</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+        <span style="font-size:20px;font-weight:900;color:var(--ink3);">$</span>
+        <input class="goal-input" type="text" id="sb-goal" value="1,000,000" inputmode="numeric">
+      </div>
+      <div id="sb-goal-results"></div>
+    </div>
+
+    <!-- What's Going In -->
+    <div class="sb-panel">
+      <div class="sb-panel-title">🥧 What's Going In?</div>
+      <div class="filter-row">
+        <select class="mini-select" id="sb-wgi-year" onchange="updateSbWgi()">
+          <option value="all">All time</option>
+        </select>
+        <select class="mini-select" id="sb-wgi-month" onchange="updateSbWgi()">
+          <option value="all">All months</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:160px;height:160px;flex-shrink:0;"><canvas id="sb-wgi-chart" role="img" aria-label="What's going in">Contribution breakdown</canvas></div>
+        <div style="flex:1;min-width:0;" id="sb-wgi-legend"></div>
+      </div>
+    </div>
+
+    <!-- Milestone Tracker -->
+    <div class="sb-panel">
+      <div class="sb-panel-title">🏆 Milestone Tracker</div>
+      <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:14px;" id="ms-sub-label">At input rate · when does this portfolio hit key thresholds?</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:7px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);border-bottom:2px solid var(--bdr);">Target</th>
+            <th style="text-align:center;padding:7px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);border-bottom:2px solid var(--bdr);">Year</th>
+            <th style="text-align:center;padding:7px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);border-bottom:2px solid var(--bdr);">By</th>
+            <th style="text-align:right;padding:7px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);border-bottom:2px solid var(--bdr);">Status</th>
+          </tr>
+        </thead>
+        <tbody id="ms-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const CONFIG = {
+  startDate: "2026-06-06",
+  personas: {
+    ranjith: { label:"Ranjith", startingBalance:21751,    monthlyContribution:2000, birthday:{day:8,  month:11, amount:500}, color:'#ff8b6b', colorLight:'#fff0ec', avCls:'av-r', chipCls:'pm-r' },
+    aranei:  { label:"Aranei",  startingBalance:71016.30, monthlyContribution:1000, birthday:{day:20, month:1,  amount:500}, color:'#a78bfa', colorLight:'#f3efff', avCls:'av-a', chipCls:'pm-a' },
+    kavin:   { label:"Kavin",   startingBalance:10000,    monthlyContribution:500,  birthday:{day:18, month:5,  amount:400}, color:'#34d399', colorLight:'#ecfdf5', avCls:'av-k', chipCls:'pm-k' }
+  },
+  projectionYears: 30
+};
+
+const MONTHS_30 = CONFIG.projectionYears * 12;
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbypjmjcC29EvOM2v0RwzC9DabOucOdfAVFV0Saeu5u3uS7l6KD-UaM7y-f2iFVrufYS7A/exec";
+let sheetData = [];
+let currentFilter = 'fam';
+let currentRate = 0.08; // global rate, synced to input
+const charts = {};
+
+// ═══════════════════════════════════════════
+// MATH ENGINE
+// ═══════════════════════════════════════════
+const startDate = () => new Date(CONFIG.startDate);
+const today     = () => new Date();
+
+function elapsed() {
+  const s = startDate(), n = today();
+  return Math.max(0, (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth()));
+}
+
+function runProjection(persona, annualRate, months, extra = []) {
+  const p = CONFIG.personas[persona];
+  const mr = annualRate / 12;
+  let bal = p.startingBalance;
+  const out = [bal];
+  const s = startDate();
+  for (let m = 1; m <= months; m++) {
+    const d = new Date(s); d.setMonth(d.getMonth() + m);
+    const yr = d.getFullYear(), mo = d.getMonth() + 1;
+    bal = bal * (1 + mr) + p.monthlyContribution;
+    if (mo === p.birthday.month) bal += p.birthday.amount;
+    bal += extra
+      .filter(c => c.persona.toLowerCase() === persona
+        && new Date(c.date).getFullYear() === yr
+        && new Date(c.date).getMonth() + 1 === mo)
+      .reduce((s, c) => s + c.amount, 0);
+    out.push(bal);
+  }
+  return out;
+}
+
+function runContribOnly(persona, months) {
+  const p = CONFIG.personas[persona];
+  let bal = p.startingBalance;
+  const out = [bal];
+  const s = startDate();
+  for (let m = 1; m <= months; m++) {
+    const d = new Date(s); d.setMonth(d.getMonth() + m);
+    const mo = d.getMonth() + 1;
+    bal += p.monthlyContribution;
+    if (mo === p.birthday.month) bal += p.birthday.amount;
+    out.push(bal);
+  }
+  return out;
+}
+
+function combined(rate, months, extra = []) {
+  return Object.keys(CONFIG.personas)
+    .map(k => runProjection(k, rate, months, extra))
+    .reduce((acc, arr) => arr.map((v, i) => v + (acc[i] || 0)));
+}
+
+function bdayTotal(persona) {
+  const p = CONFIG.personas[persona];
+  const s = startDate(), n = today();
+  let c = 0;
+  for (let y = s.getFullYear(); y <= n.getFullYear(); y++) {
+    const bd = new Date(y, p.birthday.month - 1, p.birthday.day);
+    if (bd >= s && bd <= n) c++;
+  }
+  return c * p.birthday.amount;
+}
+
+function breakdown(persona, extra = []) {
+  const p = CONFIG.personas[persona];
+  const mo = elapsed(), n = today();
+  const start   = p.startingBalance;
+  const monthly = mo * p.monthlyContribution;
+  const bday    = bdayTotal(persona);
+  const oneoff  = extra.filter(c => c.persona.toLowerCase() === persona && new Date(c.date) <= n).reduce((s, c) => s + c.amount, 0);
+  return { start, monthly, bday, oneoff, total: start + monthly + bday + oneoff };
+}
+
+function familyBreakdown(extra = []) {
+  const parts = Object.keys(CONFIG.personas).map(k => breakdown(k, extra));
+  return {
+    start:   parts.reduce((s, p) => s + p.start, 0),
+    monthly: parts.reduce((s, p) => s + p.monthly, 0),
+    bday:    parts.reduce((s, p) => s + p.bday, 0),
+    oneoff:  parts.reduce((s, p) => s + p.oneoff, 0),
+    total:   parts.reduce((s, p) => s + p.total, 0)
+  };
+}
+
+// ═══════════════════════════════════════════
+// FORMATTING
+// ═══════════════════════════════════════════
+const fmt     = n => n >= 1e6 ? '$' + (n / 1e6).toFixed(0) + 'M' : n >= 1e3 ? '$' + Math.round(n / 1e3) + 'k' : '$' + Math.round(n);
+const fmtFull = n => '$' + Math.round(n).toLocaleString('en-AU');
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+const set     = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+
+// ═══════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════
+const YRS = CONFIG.projectionYears;
+const MILESTONE_YRS = new Set([0, 5, 10, 15, 20, 25, 30]);
+
+function projLabels() {
+  return Array.from({ length: YRS + 1 }, (_, i) =>
+    i === 0 ? 'Now' : i % 5 === 0 ? 'Yr ' + i : '');
+}
+
+function sample(arr) {
+  return Array.from({ length: YRS + 1 }, (_, y) => arr[Math.min(y * 12, arr.length - 1)]);
+}
+
+function datalabelsCfg(col) {
+  return {
+    display: ctx => MILESTONE_YRS.has(ctx.dataIndex),
+    formatter: v => fmt(v),
+    color: col || '#7c6355',
+    font: { family:"'Nunito',sans-serif", weight:'800', size:13 },
+    anchor: 'end',
+    align: 'top',
+    offset: 3,
+    clamp: true,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    borderRadius: 4,
+    padding: { top:2, bottom:2, left:3, right:3 }
+  };
+}
+
+function destroyChart(id) {
+  if (charts[id]) { try { charts[id].destroy(); } catch(e){} delete charts[id]; }
+}
+
+function mkChart(id, type, data, options) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  charts[id] = new Chart(ctx, { type, data, options });
+  return charts[id];
+}
+
+// Full 3-line projection chart with data labels on base line
+function buildProjChart(id, getCurve, baseCol) {
+  const c6  = getCurve(0.06);
+  const c8  = getCurve(currentRate);
+  const c10 = getCurve(0.10);
+  const col = baseCol || '#ff8b6b';
+  return mkChart(id, 'line', {
+    labels: projLabels(),
+    datasets: [
+      { label:'6% Conservative', data:sample(c6),  borderColor:'#ffc2b4', borderWidth:1.5, borderDash:[6,4], pointRadius:0, tension:0.4, fill:false, datalabels:{ display:false } },
+      { label:'Input Rate',       data:sample(c8),  borderColor:col,        borderWidth:2.5, pointRadius:0,   tension:0.4, fill:false, datalabels: datalabelsCfg(col) },
+      { label:'10% Aggressive',   data:sample(c10), borderColor:'#a78bfa',  borderWidth:1.5, borderDash:[3,3], pointRadius:0, tension:0.4, fill:false, datalabels:{ display:false } }
+    ]
+  }, {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 22 } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {},
+      tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.parsed.y) } }
+    },
+    scales: {
+      x: { grid:{ color:'rgba(61,43,31,.05)' }, ticks:{ color:'#b8a49c', font:{ size:14, family:"'Nunito',sans-serif", weight:'700' } } },
+      y: { grid:{ color:'rgba(61,43,31,.05)' }, ticks:{ color:'#b8a49c', font:{ size:14, family:"'Nunito',sans-serif" }, callback: v => fmt(v) } }
+    }
+  });
+}
+
+// Mini persona chart (compact, data labels at 0/10/20/30)
+function buildMiniChart(id, persona, col) {
+  const c6 = runProjection(persona, 0.06, MONTHS_30, sheetData);
+  const c8 = runProjection(persona, currentRate, MONTHS_30, sheetData);
+  const colFaded = col + '66';
+  const MINI_MIL = new Set([0, 10, 20, 30]);
+  return mkChart(id, 'line', {
+    labels: projLabels(),
+    datasets: [
+      { label:'6%', data:sample(c6), borderColor:colFaded, borderWidth:1, borderDash:[5,4], pointRadius:0, tension:0.4, fill:false, datalabels:{ display:false } },
+      { label:'Input Rate', data:sample(c8), borderColor:col, borderWidth:2, pointRadius:0, tension:0.4, fill:false,
+        datalabels:{
+          display: ctx => MINI_MIL.has(ctx.dataIndex),
+          formatter: v => fmt(v),
+          color: col,
+          font:{ size:13, weight:'800', family:"'Nunito',sans-serif" },
+          anchor:'end', align:'top', offset:2, clamp:true,
+          backgroundColor:'rgba(255,255,255,0.75)', borderRadius:3,
+          padding:{ top:1, bottom:1, left:2, right:2 }
+        }
+      }
+    ]
+  }, {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 22 } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {},
+      tooltip: { callbacks: { label: c => fmt(c.parsed.y) } }
+    },
+    scales: {
+      x: { grid:{ display:false }, ticks:{ color:'#c8b8b2', font:{ size:14, family:"'Nunito',sans-serif", weight:'700' }, maxTicksLimit:7 } },
+      y: { display: false }
+    }
+  });
+}
+
+// Donut with % labels in white
+function buildWgiChart(id, bd) {
+  const vals = [bd.start, bd.monthly, bd.bday, bd.oneoff].map(v => Math.max(0, v));
+  const total = vals.reduce((a, b) => a + b, 0) || 1;
+  return mkChart(id, 'doughnut', {
+    labels: ['Starting','Monthly','Birthdays','One-Off'],
+    datasets: [{ data: vals, backgroundColor:['#ff8b6b','#a78bfa','#34d399','#c2622d'], borderWidth:0, hoverOffset:4 }]
+  }, {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend:{ display:false },
+      datalabels:{
+        display: ctx => (ctx.dataset.data[ctx.dataIndex] / total) > 0.04,
+        formatter: (v) => Math.round(v / total * 100) + '%',
+        color: '#fff',
+        font:{ size:12, weight:'900', family:"'Nunito',sans-serif" }
+      },
+      tooltip:{ callbacks:{ label: c => c.label + ': ' + fmt(c.parsed) } }
+    }
+  });
+}
+
+// Sidebar WGI legend — single column beside the donut
+function wgiLegendHtml(bd) {
+  const total = bd.start + bd.monthly + bd.bday + bd.oneoff || 1;
+  const items = [
+    { label:'Starting',  val:bd.start,   col:'#ff8b6b' },
+    { label:'Monthly',   val:bd.monthly, col:'#a78bfa' },
+    { label:'Birthdays', val:bd.bday,    col:'#34d399' },
+    { label:'One-off',   val:bd.oneoff,  col:'#c2622d' }
+  ];
+  return items.map(i => {
+    const pct = Math.round(i.val / total * 100);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="width:9px;height:9px;border-radius:50%;background:${i.col};flex-shrink:0;display:inline-block;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span style="font-size:10px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;">${i.label}</span>
+          <span style="font-size:10px;font-weight:800;color:${i.col};">${pct}%</span>
+        </div>
+        <div style="font-size:14px;font-weight:900;margin-top:1px;">${fmt(i.val)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Family tile WGI legend — 2×2 grid fills space beside donut cleanly
+function wgiLegendFamilyHtml(bd) {
+  const total = bd.start + bd.monthly + bd.bday + bd.oneoff || 1;
+  const items = [
+    { label:'Starting balance',      val:bd.start,   col:'#ff8b6b' },
+    { label:'Monthly contributions', val:bd.monthly, col:'#a78bfa' },
+    { label:'Birthday gifts',        val:bd.bday,    col:'#34d399' },
+    { label:'One-off contributions', val:bd.oneoff,  col:'#c2622d' }
+  ];
+  const grid = items.map(i => {
+    const pct = Math.round(i.val / total * 100);
+    return `<div style="display:flex;flex-direction:column;gap:5px;padding:12px;background:var(--bg);border-radius:12px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="width:9px;height:9px;border-radius:50%;background:${i.col};flex-shrink:0;display:inline-block;"></span>
+        <span style="font-size:10px;font-weight:800;color:var(--ink3);">${i.label}</span>
+      </div>
+      <div style="font-size:16px;font-weight:900;color:var(--ink);">${fmt(i.val)}</div>
+      <div style="height:4px;background:rgba(61,43,31,0.07);border-radius:100px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${i.col};border-radius:100px;"></div>
+      </div>
+      <div style="font-size:10px;font-weight:800;color:${i.col};">${pct}%</div>
+    </div>`;
+  }).join('');
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${grid}</div>`;
+}
+
+// ═══════════════════════════════════════════
+// WGI FILTER LOGIC
+// ═══════════════════════════════════════════
+function populateYearSelect(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  while (el.options.length > 1) el.remove(1);
+  const s = startDate(), n = today();
+  for (let y = n.getFullYear(); y >= s.getFullYear(); y--) {
+    const o = document.createElement('option'); o.value = y; o.textContent = y; el.appendChild(o);
+  }
+}
+
+function populateMonthSelect(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  while (el.options.length > 1) el.remove(1);
+  ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach((m, i) => {
+    const o = document.createElement('option'); o.value = i + 1; o.textContent = m; el.appendChild(o);
+  });
+}
+
+function filteredBreakdown(persona, yearVal, monthVal) {
+  const isFamily = persona === 'fam';
+  const pkeys = isFamily ? Object.keys(CONFIG.personas) : [persona];
+  let start = 0, monthly = 0, bday = 0, oneoff = 0;
+  const n = today(), s = startDate();
+  pkeys.forEach(k => {
+    const p = CONFIG.personas[k];
+    start += p.startingBalance;
+    let cur = new Date(s);
+    while (cur <= n) {
+      const y = cur.getFullYear(), mo = cur.getMonth() + 1;
+      if ((yearVal === 'all' || +yearVal === y) && (monthVal === 'all' || +monthVal === mo)) {
+        monthly += p.monthlyContribution;
+        if (mo === p.birthday.month) bday += p.birthday.amount;
+      }
+      cur.setMonth(cur.getMonth() + 1);
+    }
+    sheetData.filter(c => {
+      const cd = new Date(c.date);
+      return (isFamily || c.persona.toLowerCase() === k)
+        && (yearVal === 'all' || cd.getFullYear() === +yearVal)
+        && (monthVal === 'all' || cd.getMonth() + 1 === +monthVal)
+        && cd <= n;
+    }).forEach(c => oneoff += c.amount);
+  });
+  return { start, monthly, bday, oneoff, total: start + monthly + bday + oneoff };
+}
+
+function updateFvWgi() {
+  const yr = document.getElementById('fv-wgi-year')?.value  || 'all';
+  const mo = document.getElementById('fv-wgi-month')?.value || 'all';
+  const bd = filteredBreakdown('fam', yr, mo);
+  buildWgiChart('fv-wgi-chart', bd);
+  const leg = document.getElementById('fv-wgi-legend');
+  if (leg) leg.innerHTML = wgiLegendFamilyHtml(bd);
+}
+
+function updateSbWgi() {
+  if (!currentFilter || currentFilter === 'fam') return;
+  const yr = document.getElementById('sb-wgi-year')?.value  || 'all';
+  const mo = document.getElementById('sb-wgi-month')?.value || 'all';
+  const bd = filteredBreakdown(currentFilter, yr, mo);
+  buildWgiChart('sb-wgi-chart', bd);
+  const leg = document.getElementById('sb-wgi-legend');
+  if (leg) leg.innerHTML = wgiLegendHtml(bd);
+}
+
+// ═══════════════════════════════════════════
+// MILESTONE TRACKER
+// ═══════════════════════════════════════════
+const MILESTONES = [50000, 100000, 250000, 500000, 1000000, 2000000, 5000000, 10000000];
+
+function renderMilestones(persona) {
+  const tbody = document.getElementById('ms-table-body');
+  if (!tbody || !persona || persona === 'fam') return;
+
+  const arr = runProjection(persona, currentRate, CONFIG.projectionYears * 12, sheetData);
+  const curr = arr[elapsed()]; // approximate current value index
+  const p = CONFIG.personas[persona];
+  const startYr = new Date(CONFIG.startDate).getFullYear();
+
+  // Update subtitle
+  const subEl = document.getElementById('ms-sub-label');
+  if (subEl) subEl.textContent = `At ${(currentRate*100).toFixed(1)}% input rate · ${p.label}'s portfolio`;
+
+  const rows = MILESTONES.map(target => {
+    const done = curr >= target;
+    const hitIdx = arr.findIndex(v => v >= target);
+    const yr = hitIdx > 0 ? Math.ceil(hitIdx / 12) : null;
+    const calYr = yr ? startYr + yr : null;
+    const beyond = !done && !yr;
+    return { target, done, yr, calYr, beyond };
+  });
+
+  // Find the "next" milestone (first not done)
+  const nextIdx = rows.findIndex(r => !r.done);
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const isNext = i === nextIdx;
+    const color  = r.done ? 'var(--k)' : isNext ? p.color : 'var(--ink3)';
+    const bgRow  = isNext ? `background:${p.color}08;` : '';
+
+    // Status chip
+    let statusHtml;
+    if (r.done) {
+      statusHtml = `<span style="background:var(--k-l);color:var(--k);font-size:9px;font-weight:900;padding:3px 9px;border-radius:100px;">Reached ✓</span>`;
+    } else if (isNext) {
+      statusHtml = `<span style="background:${p.color}18;color:${p.color};font-size:9px;font-weight:900;padding:3px 9px;border-radius:100px;">Next →</span>`;
+    } else if (r.beyond) {
+      statusHtml = `<span style="color:var(--ink3);font-size:10px;font-weight:700;">30+ yrs</span>`;
+    } else {
+      statusHtml = `<span style="color:var(--ink3);font-size:10px;font-weight:700;">Upcoming</span>`;
+    }
+
+    return `<tr style="${bgRow}border-bottom:1px solid var(--bdr);">
+      <td style="padding:10px 8px;font-size:14px;font-weight:900;color:${color};">${fmt(r.target)}</td>
+      <td style="padding:10px 8px;text-align:center;font-size:13px;font-weight:800;color:${r.done?'var(--k)':r.beyond?'var(--ink3)':color};">${r.yr ? 'Yr ' + r.yr : r.done ? '✓' : '—'}</td>
+      <td style="padding:10px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--ink3);">${r.calYr || (r.done ? '✓' : '—')}</td>
+      <td style="padding:10px 8px;text-align:right;">${statusHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// VALUE BY PERSONA
+// ═══════════════════════════════════════════
+function renderVbp() {
+  const el = document.getElementById('vbp-rows');
+  if (!el) return;
+  const mo = elapsed();
+  const pkeys = Object.keys(CONFIG.personas);
+  const vals = pkeys.map(k => runProjection(k, 0.08, mo, sheetData).at(-1));
+  const bds  = pkeys.map(k => breakdown(k, sheetData));
+  const maxV = Math.max(...vals) || 1;
+  el.innerHTML = pkeys.map((k, i) => {
+    const p = CONFIG.personas[k];
+    const pct = Math.max(5, Math.round(vals[i] / maxV * 100));
+    return `<div class="vbp-row">
+      <div class="vbp-name" style="color:${p.color};">${p.label}</div>
+      <div class="vbp-bars">
+        <div class="bar-track"><div class="bar-fill" style="background:${p.color};width:${pct}%;"></div></div>
+        <div class="vbp-bubble-row">
+          <span class="vbp-bubble" style="background:${p.colorLight};color:${p.color};">In: ${fmt(bds[i].total)}</span>
+          <span class="vbp-bubble" style="background:${p.color}22;color:${p.color};">Now: ${fmt(vals[i])}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// GOAL CALCULATOR
+// ═══════════════════════════════════════════
+function buildGoalResults(persona) {
+  const el = document.getElementById('sb-goal-results');
+  const gEl = document.getElementById('sb-goal');
+  if (!el || !gEl) return;
+  const goal = parseFloat((gEl.value || '').replace(/,/g, '')) || 1000000;
+  const isFamily = persona === 'fam';
+  const rates = [
+    { r:0.06, label:'Conservative 6%', col:'#ffc2b4' },
+    { r:currentRate, label:`Input Rate ${(currentRate * 100).toFixed(1)}%`, col:'#ff8b6b' },
+    { r:0.10, label:'Aggressive 10%',  col:'#a78bfa' }
+  ];
+  el.innerHTML = rates.map(({ r, label, col }) => {
+    const arr = isFamily ? combined(r, MONTHS_30, sheetData) : runProjection(persona, r, MONTHS_30, sheetData);
+    const hit = arr.findIndex(v => v >= goal);
+    const yr  = hit > 0 ? Math.ceil(hit / 12) + ' yrs' : '30+ yrs';
+    return `<div class="goal-result-row">
+      <span><span class="goal-dot" style="background:${col};"></span><span style="font-size:12px;font-weight:700;">${label}</span></span>
+      <span style="font-size:15px;font-weight:900;">${yr}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// POPULATE — FAMILY
+// ═══════════════════════════════════════════
+function populateFamilyView() {
+  const mo  = elapsed();
+  const arr = combined(0.08, mo, sheetData);
+  const current = arr.at(-1);
+  const proj30  = combined(currentRate, MONTHS_30, sheetData).at(-1);
+  const bd = familyBreakdown(sheetData);
+  set('fv-hero',   fmt(current));
+  set('fv-proj30', fmt(proj30));
+  set('fv-total',  fmt(bd.total));
+  set('fv-rate-label', `at ${(currentRate * 100).toFixed(1)}% p.a.`);
+
+  Object.entries(CONFIG.personas).forEach(([k, p]) => {
+    const pArr   = runProjection(k, 0.08, mo, sheetData);
+    const pCurr  = pArr.at(-1);
+    const pProj  = runProjection(k, currentRate, MONTHS_30, sheetData).at(-1);
+    const pBd    = breakdown(k, sheetData);
+    const k0 = k[0];
+    set(`pc-${k0}-curr`,    fmt(pCurr));
+    set(`pc-${k0}-start`,   fmt(p.startingBalance));
+    set(`pc-${k0}-contrib`, fmt(pBd.total));
+    set(`pc-${k0}-proj`,    fmt(pProj));
+  });
+
+  // update legend
+  set('fv-base-legend', `${(currentRate * 100).toFixed(1)}% Input Rate`);
+
+  renderVbp();
+  updateFvWgi();
+}
+
+function buildFamilyCharts() {
+  buildProjChart('fv-proj-chart', rate => combined(rate, MONTHS_30, sheetData));
+  Object.entries(CONFIG.personas).forEach(([k, p]) => buildMiniChart(`pc-${k[0]}-chart`, k, p.color));
+  updateFvWgi();
+}
+
+// ═══════════════════════════════════════════
+// POPULATE — PERSONA
+// ═══════════════════════════════════════════
+function populatePersonaView(persona) {
+  const p  = CONFIG.personas[persona];
+  const mo = elapsed(), n = today();
+  const arrCurr = runProjection(persona, 0.08, mo, sheetData);
+  const current = arrCurr.at(-1);
+  const p30  = runProjection(persona, currentRate, MONTHS_30, sheetData).at(-1);
+  const p6   = runProjection(persona, 0.06, MONTHS_30, sheetData).at(-1);
+  const p10  = runProjection(persona, 0.10, MONTHS_30, sheetData).at(-1);
+  const bd   = breakdown(persona, sheetData);
+
+  // Avatar + name
+  const av = document.getElementById('pv-avatar');
+  if (av) { av.className = 'avatar ' + p.avCls; av.textContent = p.label[0]; }
+  set('pv-name-label', p.label);
+
+  // Stat border colours
+  ['pv-stat-1','pv-stat-2','pv-stat-3','pv-stat-4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.borderTopColor = p.color;
+  });
+
+  set('pv-hero',       fmt(current));
+  set('pv-proj30',     fmt(p30));
+  set('pv-total',      fmt(bd.total));
+  set('pv-proj-lo',    fmt(p6));
+  set('pv-proj-hi',    fmt(p10));
+  set('pv-bd-start',   fmtFull(bd.start));
+  set('pv-bd-monthly', fmtFull(bd.monthly));
+  set('pv-bd-bday',    fmtFull(bd.bday));
+  set('pv-bd-oneoff',  fmtFull(bd.oneoff));
+  set('pv-bd-total',   fmtFull(bd.total));
+  set('pv-rate-sub',   `Input Rate ${(currentRate * 100).toFixed(1)}% p.a.`);
+  set('pv-base-legend', `${(currentRate * 100).toFixed(1)}% Input Rate`);
+
+  // Table
+  const rows = sheetData
+    .filter(c => c.persona.toLowerCase() === persona && new Date(c.date) <= n)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const tbl = document.getElementById('pv-tbl');
+  if (tbl) {
+    tbl.innerHTML = rows.length === 0
+      ? `<tr><td colspan="4" class="empty-state">Connect your Google Sheet to load contributions</td></tr>`
+      : rows.map(c => `<tr><td>${fmtDate(c.date)}</td><td>${c.description}</td><td>${c.from}</td><td class="amt">${fmtFull(c.amount)}</td></tr>`).join('');
+  }
+}
+
+function buildPersonaCharts(persona) {
+  const col = CONFIG.personas[persona].color;
+  buildProjChart('pv-proj-chart', rate => runProjection(persona, rate, MONTHS_30, sheetData), col);
+  updateSbWgi();
+  buildGoalResults(persona);
+  renderMilestones(persona);
+}
+
+// ═══════════════════════════════════════════
+// FILTER SWITCH
+// ═══════════════════════════════════════════
+function switchFilter(persona) {
+  currentFilter = persona;
+  const isFamily = persona === 'fam';
+  document.getElementById('family-view').style.display  = isFamily ? 'block' : 'none';
+  document.getElementById('persona-view').style.display = isFamily ? 'none'  : 'block';
+
+  const tab = document.getElementById('sb-tab');
+  if (isFamily) {
+    // Close sidebar, hide tab
+    closeSidebar();
+    tab.classList.remove('visible');
+  } else {
+    tab.classList.add('visible');
+    openSidebar();
+  }
+
+  if (isFamily) {
+    populateFamilyView();
+    buildFamilyCharts();
+  } else {
+    populatePersonaView(persona);
+    buildPersonaCharts(persona);
+  }
+}
+
+// ═══════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.body.classList.add('sb-open');
+  const tab = document.getElementById('sb-tab');
+  tab.classList.remove('retracted');
+  tab.querySelector('.sb-tab-arrow').textContent = '▶';
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.body.classList.remove('sb-open');
+  const tab = document.getElementById('sb-tab');
+  tab.classList.add('retracted');
+  tab.querySelector('.sb-tab-arrow').textContent = '◀';
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (sb.classList.contains('open')) closeSidebar(); else openSidebar();
+}
+
+// ═══════════════════════════════════════════
+// RATE INPUT — drives entire dashboard
+// ═══════════════════════════════════════════
+document.getElementById('global-rate').addEventListener('input', function () {
+  const raw = parseFloat(this.value);
+  if (isNaN(raw) || raw <= 0) return;
+  currentRate = raw / 100;
+
+  if (currentFilter === 'fam') {
+    // Update family hero stats
+    const proj30 = combined(currentRate, MONTHS_30, sheetData).at(-1);
+    set('fv-proj30', fmt(proj30));
+    set('fv-rate-label', `at ${raw.toFixed(1)}% p.a.`);
+    set('fv-base-legend', `${raw.toFixed(1)}% Input Rate`);
+
+    // Update each persona card 30-year
+    Object.keys(CONFIG.personas).forEach(k => {
+      const pProj = runProjection(k, currentRate, MONTHS_30, sheetData).at(-1);
+      set(`pc-${k[0]}-proj`, fmt(pProj));
+    });
+
+    // Update mini charts (dataset 1 = input rate line)
+    Object.entries(CONFIG.personas).forEach(([k, p]) => {
+      const ch = charts[`pc-${k[0]}-chart`];
+      if (ch) {
+        const newData = sample(runProjection(k, currentRate, MONTHS_30, sheetData));
+        ch.data.datasets[1].data = newData;
+        ch.data.datasets[1].datalabels = {
+          display: ctx => new Set([0,10,20,30]).has(ctx.dataIndex),
+          formatter: v => fmt(v), color: p.color,
+          font:{ size:13, weight:'800', family:"'Nunito',sans-serif" },
+          anchor:'end', align:'top', offset:2, clamp:true,
+          backgroundColor:'rgba(255,255,255,0.75)', borderRadius:3,
+          padding:{ top:1, bottom:1, left:2, right:2 }
+        };
+        ch.update('none');
+      }
+    });
+
+    // Update combined proj chart
+    const ch = charts['fv-proj-chart'];
+    if (ch) {
+      const newData = sample(combined(currentRate, MONTHS_30, sheetData));
+      ch.data.datasets[1].data = newData;
+      ch.data.datasets[1].datalabels = datalabelsCfg('#ff8b6b');
+      ch.update('none');
+    }
+
+  } else {
+    // Persona view
+    const p30 = runProjection(currentFilter, currentRate, MONTHS_30, sheetData).at(-1);
+    set('pv-proj30',     fmt(p30));
+    set('pv-rate-sub',   `Input Rate ${raw.toFixed(1)}% p.a.`);
+    set('pv-base-legend', `${raw.toFixed(1)}% Input Rate`);
+
+    const ch = charts['pv-proj-chart'];
+    if (ch) {
+      const col = CONFIG.personas[currentFilter].color;
+      const newData = sample(runProjection(currentFilter, currentRate, MONTHS_30, sheetData));
+      ch.data.datasets[1].data = newData;
+      ch.data.datasets[1].datalabels = datalabelsCfg(col);
+      ch.update('none');
+    }
+
+    // Goal results update with new rate
+    buildGoalResults(currentFilter);
+    // Milestone table updates with new rate
+    renderMilestones(currentFilter);
+  }
+});
+
+// ═══════════════════════════════════════════
+// FILTER BUTTONS
+// ═══════════════════════════════════════════
+document.querySelectorAll('#main-filter button').forEach(btn => {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('#main-filter button').forEach(b => b.classList.remove('on'));
+    this.classList.add('on');
+    switchFilter(this.dataset.p);
+  });
+});
+
+// ═══════════════════════════════════════════
+// GOAL INPUT
+// ═══════════════════════════════════════════
+// Goal input — format with commas as user types
+const goalEl = document.getElementById('sb-goal');
+if (goalEl) {
+  goalEl.addEventListener('input', function() {
+    const raw = this.value.replace(/[^0-9]/g, '');
+    const num = parseInt(raw, 10);
+    if (!isNaN(num)) {
+      const pos = this.selectionStart;
+      const oldLen = this.value.length;
+      this.value = num.toLocaleString('en-AU');
+      // Restore cursor position accounting for added commas
+      const newLen = this.value.length;
+      this.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen));
+    } else {
+      this.value = '';
+    }
+    buildGoalResults(currentFilter);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SHEET FETCH
+// ═══════════════════════════════════════════
+async function loadSheet() {
+  if (!SHEET_URL || SHEET_URL.includes('PASTE')) return;
+  try {
+    const res = await fetch(SHEET_URL);
+    sheetData = await res.json();
+  } catch (e) {
+    console.warn('Sheet not connected — config-only mode', e);
+  }
+}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+window.addEventListener('load', async () => {
+  // Register datalabels plugin globally
+  Chart.register(ChartDataLabels);
+
+  await loadSheet();
+  ['fv-wgi-year','sb-wgi-year'].forEach(populateYearSelect);
+  ['fv-wgi-month','sb-wgi-month'].forEach(populateMonthSelect);
+
+  // Close sidebar initially (family view)
+  document.getElementById('sidebar').classList.remove('open');
+  document.body.classList.remove('sb-open');
+
+  switchFilter('fam');
+});
+</script>
+</body>
+</html>
