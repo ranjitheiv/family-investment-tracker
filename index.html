@@ -860,7 +860,7 @@ function filteredBreakdown(persona, yearVal, monthVal) {
     sheetData.filter(c => {
       const cd = new Date(c.date);
       return c.amount > 0
-        && (isFamily || c.persona.toLowerCase() === k)
+        && c.persona.toLowerCase() === k
         && (yearVal === 'all' || cd.getFullYear() === +yearVal)
         && (monthVal === 'all' || cd.getMonth() + 1 === +monthVal)
         && cd <= n;
