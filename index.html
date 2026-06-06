@@ -1282,16 +1282,24 @@ async function loadSheet() {
 window.addEventListener('load', async () => {
   // Register datalabels plugin globally
   Chart.register(ChartDataLabels);
+  console.log('✅ Chart.js registered');
 
   await loadSheet();
+  console.log('✅ Sheet loaded. Rows:', sheetData.length, JSON.stringify(sheetData));
+  console.log('✅ CONFIG check — Ranjith starting:', CONFIG.personas.ranjith.startingBalance);
+
+  const testProjection = runProjection('kavin', 0.08, 1, []);
+  console.log('✅ Test projection (Kavin month 1):', testProjection);
+
   ['fv-wgi-year','sb-wgi-year'].forEach(populateYearSelect);
   ['fv-wgi-month','sb-wgi-month'].forEach(populateMonthSelect);
 
-  // Close sidebar initially (family view)
   document.getElementById('sidebar').classList.remove('open');
   document.body.classList.remove('sb-open');
 
+  console.log('✅ About to switchFilter fam');
   switchFilter('fam');
+  console.log('✅ switchFilter done. fv-hero text:', document.getElementById('fv-hero')?.textContent);
 });
 </script>
 </body>
