@@ -612,7 +612,7 @@ function breakdown(persona, extra = []) {
   const start   = p.startingBalance;
   const monthly = mo * p.monthlyContribution;
   const bday    = bdayTotal(persona);
-  const oneoff  = extra.filter(c => c.persona.toLowerCase() === persona && new Date(c.date) <= n).reduce((s, c) => s + c.amount, 0);
+  const oneoff  = extra.filter(c => c.amount > 0 && c.persona.toLowerCase() === persona && new Date(c.date) <= n).reduce((s, c) => s + c.amount, 0);
   return { start, monthly, bday, oneoff, total: start + monthly + bday + oneoff };
 }
 
@@ -840,12 +840,13 @@ function populateMonthSelect(id) {
 function filteredBreakdown(persona, yearVal, monthVal) {
   const isFamily = persona === 'fam';
   const pkeys = isFamily ? Object.keys(CONFIG.personas) : [persona];
-  let start = 0, monthly = 0, bday = 0, oneoff = 0;
-  const n = today(), s = startDate();
+  // Starting balance always comes from CONFIG — it is not a time-filtered value
+  let start = pkeys.reduce((s, k) => s + CONFIG.personas[k].startingBalance, 0);
+  let monthly = 0, bday = 0, oneoff = 0;
+  const n = today(), sd = startDate();
   pkeys.forEach(k => {
     const p = CONFIG.personas[k];
-    start += p.startingBalance;
-    let cur = new Date(s);
+    let cur = new Date(sd);
     while (cur <= n) {
       const y = cur.getFullYear(), mo = cur.getMonth() + 1;
       if ((yearVal === 'all' || +yearVal === y) && (monthVal === 'all' || +monthVal === mo)) {
@@ -856,7 +857,8 @@ function filteredBreakdown(persona, yearVal, monthVal) {
     }
     sheetData.filter(c => {
       const cd = new Date(c.date);
-      return (isFamily || c.persona.toLowerCase() === k)
+      return c.amount > 0
+        && (isFamily || c.persona.toLowerCase() === k)
         && (yearVal === 'all' || cd.getFullYear() === +yearVal)
         && (monthVal === 'all' || cd.getMonth() + 1 === +monthVal)
         && cd <= n;
@@ -1251,8 +1253,24 @@ if (goalEl) {
 async function loadSheet() {
   if (!SHEET_URL || SHEET_URL.includes('PASTE')) return;
   try {
-    const res = await fetch(SHEET_URL);
-    sheetData = await res.json();
+    const res  = await fetch(SHEET_URL);
+    const data = await res.json();
+    if (!Array.isArray(data)) { console.warn('Sheet returned non-array:', data); return; }
+
+    // Filter out zero/negative amounts (catches accidental blank rows or test entries)
+    const valid = data.filter(c => c.amount > 0);
+
+    // Deduplicate: keep only unique rows by date+persona+amount+description
+    // This guards against Google Sheets returning duplicate rows from edit history
+    const seen = new Set();
+    sheetData = valid.filter(c => {
+      const key = `${c.date}|${c.persona}|${c.amount}|${c.description}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    console.log(`Loaded ${sheetData.length} contribution rows (${data.length - sheetData.length} filtered/deduped)`);
   } catch (e) {
     console.warn('Sheet not connected — config-only mode', e);
   }
