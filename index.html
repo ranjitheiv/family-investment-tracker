@@ -526,7 +526,7 @@ body.sb-open #main-col{padding-right:var(--sb-w);}
 // CONFIG
 // ═══════════════════════════════════════════
 const CONFIG = {
-  startDate: "2026-05-30",
+  startDate: "2026-06-06",
   personas: {
     ranjith: { label:"Ranjith", startingBalance:21751,    monthlyContribution:2000, birthday:{day:8,  month:11, amount:500}, color:'#ff8b6b', colorLight:'#fff0ec', avCls:'av-r', chipCls:'pm-r' },
     aranei:  { label:"Aranei",  startingBalance:71016.30, monthlyContribution:1000, birthday:{day:20, month:1,  amount:500}, color:'#a78bfa', colorLight:'#f3efff', avCls:'av-a', chipCls:'pm-a' },
@@ -553,11 +553,37 @@ function elapsed() {
   return Math.max(0, (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth()));
 }
 
+// Count how many monthly auto-invest payments have actually occurred
+// Auto-invest hits on the 18th of each month
+const AUTO_INVEST_DAY = 18;
+
+function monthsContributed() {
+  const s = startDate(), n = today();
+  // Total calendar months since start
+  const totalMonths = (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth());
+  // If we haven't reached the 18th of the current month yet, subtract 1
+  const partial = n.getDate() < AUTO_INVEST_DAY ? 1 : 0;
+  return Math.max(0, totalMonths - partial);
+}
+
 function runProjection(persona, annualRate, months, extra = []) {
   const p = CONFIG.personas[persona];
   const mr = annualRate / 12;
   const s = startDate();
-  let bal = p.startingBalance;
+  const startYr = s.getFullYear(), startMo = s.getMonth() + 1;
+
+  // Add any one-off contributions dated in the same month as startDate
+  // directly to the opening balance — the loop starts at month 1 (next month)
+  // so same-month contributions would otherwise never be matched
+  const openingExtra = extra
+    .filter(c => c.amount > 0 && c.persona.toLowerCase() === persona)
+    .filter(c => {
+      const cd = new Date(c.date);
+      return cd.getFullYear() === startYr && cd.getMonth() + 1 === startMo;
+    })
+    .reduce((sum, c) => sum + c.amount, 0);
+
+  let bal = p.startingBalance + openingExtra;
   const out = [bal];
 
   for (let m = 1; m <= months; m++) {
@@ -610,7 +636,8 @@ function bdayTotal(persona) {
 
 function breakdown(persona, extra = []) {
   const p = CONFIG.personas[persona];
-  const mo = elapsed(), n = today();
+  const mo = monthsContributed(); // only count months where 18th has passed
+  const n = today();
   const start   = p.startingBalance;
   const monthly = mo * p.monthlyContribution;
   const bday    = bdayTotal(persona);
@@ -851,9 +878,13 @@ function filteredBreakdown(persona, yearVal, monthVal) {
     let cur = new Date(sd);
     while (cur <= n) {
       const y = cur.getFullYear(), mo = cur.getMonth() + 1;
-      if ((yearVal === 'all' || +yearVal === y) && (monthVal === 'all' || +monthVal === mo)) {
-        monthly += p.monthlyContribution;
-        if (mo === p.birthday.month) bday += p.birthday.amount;
+      // Only count this month's contribution if the 18th has passed
+      const investDate = new Date(y, mo - 1, AUTO_INVEST_DAY);
+      if (investDate <= n) {
+        if ((yearVal === 'all' || +yearVal === y) && (monthVal === 'all' || +monthVal === mo)) {
+          monthly += p.monthlyContribution;
+          if (mo === p.birthday.month) bday += p.birthday.amount;
+        }
       }
       cur.setMonth(cur.getMonth() + 1);
     }
